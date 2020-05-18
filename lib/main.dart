@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 void main() => runApp(
@@ -20,14 +22,38 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
-  bool enabled = true;
+  bool enabled = false;
 
   List<dynamic> myFields = [];
+  int keyValue = 1;
 
   void onAdd(){
     setState(() {
       myFields.length %2 == 0 ?
-      myFields.add(MyTextField(enabled: enabled,)) : myFields.add(MyContentField(enabled: enabled,));
+      myFields.add(
+          MyTextField(
+            key: ValueKey(++keyValue),
+            enabled: enabled,
+            onDismissed: (d,index){
+              print(index);
+              myFields.removeAt(index);
+              setState(() {
+              });
+            },
+          )
+      ) :
+      myFields.add(
+          MyContentField(
+            key: ValueKey(++keyValue),
+            enabled: enabled,
+            onDismissed: (d,index){
+              print(index);
+              myFields.removeAt(index);
+              setState(() {
+              });
+            },
+          )
+      );
     });
   }
 
@@ -41,9 +67,8 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       enabled = !enabled;
       myFields.forEach((element) {
-        element.myFieldState.setState(() {
-          element.enabled = enabled;
-        });
+        element.enabled = enabled;
+        element.myFieldState.setState((){});
       });
     });
   }
@@ -71,11 +96,20 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text('Reactive Fields'),
       ),
-      body: ListView.builder(
-        itemCount: myFields.length,
-        itemBuilder: (_,index){
-          return myFields[index];
+      body: ReorderableListView(
+        onReorder: (oldIndex,newIndex){
+          setState(() {
+            if(oldIndex < newIndex){
+              newIndex-=1;
+            }
+            final dynamic data = myFields.removeAt(oldIndex);
+            myFields.insert(newIndex, data);
+          });
         },
+        children: List.generate(myFields.length, (index){
+          myFields[index].listIndex = index;
+          return myFields[index];
+        }),
       ),
     );
   }
@@ -83,9 +117,13 @@ class _HomePageState extends State<HomePage> {
 
 class MyTextField extends StatefulWidget {
 
+  Key key;
+  Function(DismissDirection,int) onDismissed;
+  int listIndex;
   bool enabled;
 
-  MyTextField({this.enabled = true});
+  MyTextField({this.key,this.onDismissed, this.enabled = true});
+
 
   _MyTextFieldState _myTextFieldState = _MyTextFieldState();
 
@@ -100,12 +138,28 @@ class MyTextField extends StatefulWidget {
 class _MyTextFieldState extends State<MyTextField> {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: TextField(
-        enabled: widget.enabled,
-        decoration: InputDecoration(
-          hintText: 'Input Field'
+    return Dismissible(
+      key: ValueKey('asd'),
+      onDismissed: (d){widget.onDismissed(d,widget.listIndex);},
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 7,
+              child: TextField(
+                enabled: widget.enabled,
+                decoration: InputDecoration(
+                    hintText: 'Title Field'
+                ),
+              ),
+            ),
+            Expanded(
+                flex: 1,
+                child: Icon(Icons.menu))
+          ],
         ),
       ),
     );
@@ -114,9 +168,12 @@ class _MyTextFieldState extends State<MyTextField> {
 
 class MyContentField extends StatefulWidget {
 
+  Key key;
+  Function(DismissDirection,int) onDismissed;
+  int listIndex;
   bool enabled;
 
-  MyContentField({this.enabled = true});
+  MyContentField({this.key,this.onDismissed, this.enabled});
 
   _MyContentFieldState _myContentFieldState = _MyContentFieldState();
 
@@ -131,12 +188,28 @@ class MyContentField extends StatefulWidget {
 class _MyContentFieldState extends State<MyContentField> {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: TextField(
-        enabled: widget.enabled,
-        decoration: InputDecoration(
-            hintText: 'Content Field'
+    return Dismissible(
+      key: ValueKey('asmda'),
+      onDismissed: (d){widget.onDismissed(d,widget.listIndex);},
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 7,
+              child: TextField(
+                enabled: widget.enabled,
+                decoration: InputDecoration(
+                    hintText: 'Content Field'
+                ),
+              ),
+            ),
+            Expanded(
+                flex: 1,
+                child: Icon(Icons.menu))
+          ],
         ),
       ),
     );
